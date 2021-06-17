@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import networkx as nx
 import random
+import copy
 
 def r():
     return random.random()
@@ -44,7 +45,7 @@ def cascade(G, active):
     graphs = [G]
     newNodes = [active]
     while True:
-        nxt, new = cascade_step(graphs[-1], newNodes[-1])
+        nxt, new = cascade_step(copy.deepcopy(graphs[-1]), newNodes[-1])
         if new == []:
             break
         newNodes.append(new)
@@ -68,7 +69,7 @@ def lin_thresh(G):
     graphs = [G]
     newNodes = [[0]]
     while True:
-        nxt, new = lin_thresh_step(graphs[-1])
+        nxt, new = lin_thresh_step(copy.deepcopy(graphs[-1]))
         if new == []:
             break
         graphs.append(nxt)
