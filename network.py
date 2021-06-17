@@ -52,7 +52,25 @@ def cascade(G, active):
     return graphs, newNodes
 
 def lin_thresh_step(G):
-    return
+    new = []
+    for i in G.nodes:
+        if G.nodes[i]["inf"] == "n":
+            pred = list(G.predecessors(i))
+            sum = 0
+            for j in pred:
+                sum += G[j][i]["weight"]
+            if sum > G.nodes[i]["thresh"]:
+                G.nodes[i]["inf"] = "y"
+                new.append(i)
+    return G, new
 
 def lin_thresh(G):
-    return
+    graphs = [G]
+    newNodes = [[0]]
+    while True:
+        nxt, new = lin_thresh_step(graphs[-1])
+        if new == []:
+            break
+        graphs.append(nxt)
+        newNodes.append(new)
+    return graphs, newNodes
