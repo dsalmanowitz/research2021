@@ -9,36 +9,40 @@ def r():
 def get_graph(n=5, p=0.5):
     G = nx.fast_gnp_random_graph(n, p, directed=True)
     for i in G.nodes:
-        G.nodes[i]["inf"] = "n"
+        G.nodes[i]["inf"] = 0
         G.nodes[i]["thresh"] = r()
-    G.nodes[most_suc(G)[0]]["inf"] = "y"
+    G.nodes[0]["inf"] = 1
+    G.nodes[1]["inf"] = -1
     for (start, end) in G.edges:
         G.edges[start, end]["weight"] = r()
     return G
 
 def show(G):
-    colors = []
-    #for i in G.nodes:
-    #    inf = G.nodes[i]["inf"]
-    #    if inf < 0.2: colors.append("#ED2938")
-    #    elif inf < 0.4: colors.append("#B25F4A")
-    #    elif inf < 0.6: colors.append("#77945C")
-    #    elif inf < 0.8: colors.append("#3BCA6D")
-    #    else: colors.append("#00FF7F")
-    for i in G.nodes:
-        colors.append("lightcoral" if G.nodes[i]["inf"] == "n" else "yellowgreen")
-    nx.draw(G, with_labels=True, node_color=colors)
+    if type(G) != list:
+        G = [G]
+    for j in range(len(G)):
+        plot = plt.figure(j+1)
+        colors = []
+        for i in G[j].nodes:
+            inf = G[j].nodes[i]["inf"]
+            if inf < -0.5: colors.append("#FF0000")
+            elif inf < 0: colors.append("#FF8000")
+            elif inf == 0: colors.append("#FFFF00")
+            elif inf < 0.5: colors.append("#80FFAA")
+            else: colors.append("#00FF00")     
+        nx.draw(G[j], with_labels=True, node_color=colors)
     plt.show()
 
 # Cascade
 
+#Does not yet work with disinfection
 def cascade_step(G, active):
     new = []
     for i in active:
         suc = list(G.successors(i))
         for j in suc:
-            if G.nodes[j]["inf"] == "n" and G[i][j]["weight"] > G.nodes[j]["thresh"]:
-                G.nodes[j]["inf"] = "y"
+            if G.nodes[j]["inf"] > 0.5 and G[i][j]["weight"] > G.nodes[j]["thresh"]:
+                G.nodes[j]["inf"] += G[i][j]["weight"] - G.nodes[j]["thresh"]
                 new.append(j)
     return G, new
 
@@ -58,19 +62,19 @@ def cascade(G, active):
 def lin_thresh_step(G):
     new = []
     for i in G.nodes:
-        if G.nodes[i]["inf"] == "n":
-            pred = list(G.predecessors(i))
-            sum = 0
-            for j in pred:
-                sum += G[j][i]["weight"]
-            if sum/len(pred) > G.nodes[i]["thresh"]:
-                G.nodes[i]["inf"] = "y"
-                new.append(i)
+        pred = list(G.predecessors(i))
+        s = 0
+        for j in pred:
+            s += G[j][i]["weight"] * G.nodes[j]["inf"]
+        if abs(s - G.nodes[i]["inf"]) > G.nodes[i]["thresh"]:
+            G.nodes[i]["inf"] += s
+            G.nodes[i]["inf"] /= 2
+            new.append(i)
     return G, new
 
 def lin_thresh(G):
     graphs = [G]
-    newNodes = [[most_suc(G)[0]]]
+    newNodes = [[0, 1]]
     while True:
         nxt, new = lin_thresh_step(copy.deepcopy(graphs[-1]))
         if new == []:
@@ -81,15 +85,21 @@ def lin_thresh(G):
 
 # Metrics
 
-def num_influenced(G):
+def num_nodes_inf(G):
     count = 0
     for i in G.nodes:
         if G.nodes[i]["inf"] > 0.5:
             count += 1
     return count
 
-def perc_influenced(G):
+def perc_nodes_inf(G):
     return num_influenced(G)/len(list(G.nodes))
+
+def network_inf(G):
+    s = 0
+    for i in G.nodes:
+        s += G.nodes[i]["inf"]
+    return s
 
 def most_suc(G):
     most = 0
@@ -100,3 +110,7 @@ def most_suc(G):
             most = i
             most_suc = n
     return most, most_suc
+
+gs = lin_thresh(get_graph(n=20))[0]
+print(network_inf(gs[-1]))
+show(gs)
