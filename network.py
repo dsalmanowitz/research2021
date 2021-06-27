@@ -41,7 +41,7 @@ def cascade_step(G, active):
     for i in active:
         suc = list(G.successors(i))
         for j in suc:
-            if G.nodes[j]["inf"] > 0.5 and G[i][j]["weight"] > G.nodes[j]["thresh"]:
+            if G.nodes[j]["inf"] > 0 and G[i][j]["weight"] > G.nodes[j]["thresh"]:
                 G.nodes[j]["inf"] += G[i][j]["weight"] - G.nodes[j]["thresh"]
                 new.append(j)
     return G, new
@@ -64,8 +64,12 @@ def lin_thresh_step(G):
     for i in G.nodes:
         pred = list(G.predecessors(i))
         s = 0
+        p = 0
         for j in pred:
             s += G[j][i]["weight"] * G.nodes[j]["inf"]
+            if G.nodes[j]["inf"] != 0:
+                p += 1
+        s /= p if p != 0 else 1
         if abs(s - G.nodes[i]["inf"]) > G.nodes[i]["thresh"]:
             G.nodes[i]["inf"] += s
             G.nodes[i]["inf"] /= 2
@@ -85,21 +89,20 @@ def lin_thresh(G):
 
 # Metrics
 
-def num_nodes_inf(G):
-    count = 0
-    for i in G.nodes:
-        if G.nodes[i]["inf"] > 0.5:
-            count += 1
-    return count
-
-def perc_nodes_inf(G):
-    return num_influenced(G)/len(list(G.nodes))
-
 def network_inf(G):
-    s = 0
+    neg = 0
+    neg_sum = 0
+    pos = 0
+    pos_sum = 0
     for i in G.nodes:
-        s += G.nodes[i]["inf"]
-    return s
+        inf = G.nodes[i]["inf"]
+        if inf < 0:
+            neg += 1
+            neg_sum += inf
+        elif inf > 0:
+            pos += 1
+            pos_sum += inf
+    return pos_sum * pos + neg_sum * neg
 
 def most_suc(G):
     most = 0
@@ -111,6 +114,5 @@ def most_suc(G):
             most_suc = n
     return most, most_suc
 
-gs = lin_thresh(get_graph(n=20))[0]
+gs = lin_thresh(get_graph(n=30))[0]
 print(network_inf(gs[-1]))
-show(gs)
