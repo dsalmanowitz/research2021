@@ -70,7 +70,7 @@ def lin_thresh_step(G):
             if G.nodes[j]["inf"] != 0:
                 p += 1
         s /= p if p != 0 else 1
-        if abs(s - G.nodes[i]["inf"]) > G.nodes[i]["thresh"]:
+        if abs(s) > G.nodes[i]["thresh"]:
             G.nodes[i]["inf"] += s
             G.nodes[i]["inf"] /= 2
             new.append(i)
@@ -81,7 +81,7 @@ def lin_thresh(G):
     newNodes = [[0, 1]]
     while True:
         nxt, new = lin_thresh_step(copy.deepcopy(graphs[-1]))
-        if new == []:
+        if new == [] or new in newNodes:
             break
         graphs.append(nxt)
         newNodes.append(new)
@@ -89,20 +89,14 @@ def lin_thresh(G):
 
 # Metrics
 
-def network_inf(G):
-    neg = 0
-    neg_sum = 0
-    pos = 0
-    pos_sum = 0
+def total_inf(G):
+    s = 0
     for i in G.nodes:
-        inf = G.nodes[i]["inf"]
-        if inf < 0:
-            neg += 1
-            neg_sum += inf
-        elif inf > 0:
-            pos += 1
-            pos_sum += inf
-    return pos_sum * pos + neg_sum * neg
+        s += G.nodes[i]["inf"]
+    return s
+
+def avg_inf(G):
+    return total_inf(G) / len(list(G.nodes))
 
 def most_suc(G):
     most = 0
@@ -114,5 +108,5 @@ def most_suc(G):
             most_suc = n
     return most, most_suc
 
-gs = lin_thresh(get_graph(n=30))[0]
-print(network_inf(gs[-1]))
+gs, ns = lin_thresh(get_graph(n=20))
+print(total_inf(gs[-1]))
