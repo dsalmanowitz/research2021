@@ -45,15 +45,51 @@ def get_graph():
     ])
     return G
 
-def show(G):
-    colors = []
+def get_graph1(n=16, p=0.1):
+    G = nx.fast_gnp_random_graph(n, p, directed=True)
     for i in G.nodes:
-        inf = G.nodes[i]["inf"]
-        if inf == 3: colors.append("#008000")
-        elif inf == 2: colors.append("#FFFF00")
-        elif inf == 1: colors.append("#FFC0CB")
-        else: colors.append("#FF0000")
-    nx.draw(G, with_labels=True, node_color=colors)
+        G.nodes[i]["inf"] = 0
+    G.nodes[0]["inf"] = 3
+    G.nodes[1]["inf"] = -3
+    for (start, end) in G.edges:
+        G.edges[start, end]["weight"] = 0
+    return G
+
+def show(G):
+    if type(G) != list:
+        G = [G]
+    for j in range(len(G)):
+        plot = plt.figure(j+1)
+        colors = []
+        for i in G[j].nodes:
+            inf = G[j].nodes[i]["inf"]
+            if inf == 3: colors.append("#008000")
+            elif inf == 2: colors.append("#FFFF00")
+            elif inf == 1: colors.append("#FFC0CB")
+            else: colors.append("#FF0000")
+        nx.draw(G[j], with_labels=True, node_color=colors)
+    plt.show()
+    
+def show1(G):
+    if type(G) != list:
+        G = [G]
+    for j in range(len(G)):
+        plot = plt.figure(j+1)
+        colors = []
+        for i in G[j].nodes:
+            inf = G[j].nodes[i]["inf"]
+            #if inf == 3: colors.append("#008000")
+            #elif inf == 2: colors.append("#FFFF00")
+            #elif inf == 1: colors.append("#FFC0CB")
+            #else: colors.append("#FF0000")
+            if inf == 3: colors.append("#4D8C57")
+            elif inf == 2: colors.append("#78A161")
+            elif inf == 1: colors.append("#A3B56B")
+            elif inf == 0: colors.append("#FFFF00")
+            elif inf == -1: colors.append("#FD9A01")
+            elif inf == -2: colors.append("#FD6104")
+            else: colors.append("#F00505")
+        nx.draw(G[j], with_labels=True, node_color=colors)
     plt.show()
 
 def set_edge_weight(G, i, j):
@@ -62,21 +98,39 @@ def set_edge_weight(G, i, j):
         if x < 0.65: G[i][j]["weight"] = 3
         elif 0.65 <= x < 0.85: G[i][j]["weight"] = 2
         elif 0.85 <= x < 0.95: G[i][j]["weight"] = 1
-        else: G[i][j]["weight"] = 0
+        elif 0.95 <= x < 0.99: G[i][j]["weight"] = 0
+        else: G[i][j]["weight"] = -1
     elif G.nodes[i]["inf"] == 2:
         if x < 0.5: G[i][j]["weight"] = 2
-        elif 0.5 <= x < 0.9: G[i][j]["weight"] = 1
-        else: G[i][j]["weight"] = 0
+        elif 0.5 <= x < 0.8: G[i][j]["weight"] = 1
+        elif 0.8 <= x < 0.95: G[i][j]["weight"] = 0
+        else: G[i][j]["weight"] = -1
     elif G.nodes[i]["inf"] == 1:
         if x < 0.5: G[i][j]["weight"] = 1
-        else: G[i][j]["weight"] = 0
-    else:
+        elif 0.5 <= x < 0.8: G[i][j]["weight"] = 0
+        else: G[i][j]["weight"] = -1
+    elif G.nodes[i]["inf"] == 0:
         G[i][j]["weight"] = 0
+    elif G.nodes[i]["inf"] == -1:
+        if x < 0.5: G[i][j]["weight"] = -1
+        elif 0.5 <= x < 0.8: G[i][j]["weight"] = 0
+        else: G[i][j]["weight"] = 1
+    elif G.nodes[i]["inf"] == -2:
+        if x < 0.5: G[i][j]["weight"] = -2
+        elif 0.5 <= x < 0.8: G[i][j]["weight"] = -1
+        elif 0.8 <= x < 0.95: G[i][j]["weight"] = 0
+        else: G[i][j]["weight"] = 1
+    elif G.nodes[i]["inf"] == -3:
+        if x < 0.65: G[i][j]["weight"] = -3
+        elif 0.65 <= x < 0.85: G[i][j]["weight"] = -2
+        elif 0.85 <= x < 0.95: G[i][j]["weight"] = -1
+        elif 0.95 <= x < 0.99: G[i][j]["weight"] = 0
+        else: G[i][j]["weight"] = 1
 
 def max_inf(G):
     graphs = [G]
     newNodes = [0]
-    while len(newNodes) != 16:
+    while len(newNodes) != len(list(G.nodes)):
         nxt = max_inf_step(copy.deepcopy(graphs[-1]), newNodes)
         graphs.append(nxt)
     return graphs, newNodes
@@ -91,7 +145,7 @@ def max_inf_step(G, new):
                 if j in step_list:
                     return G
                 set_edge_weight(G,j,i)
-                if G[j][i]["weight"] > max_weight:
+                if abs(G[j][i]["weight"]) > abs(max_weight):
                     max_weight = G[j][i]["weight"]
             G.nodes[i]["inf"] = max_weight
             new.append(i)
@@ -101,7 +155,7 @@ def max_inf_step(G, new):
 def min_inf(G):
     graphs = [G]
     newNodes = [0]
-    while len(newNodes) != 16:
+    while len(newNodes) != len(list(G.nodes)):
         nxt = min_inf_step(copy.deepcopy(graphs[-1]), newNodes)
         graphs.append(nxt)
     return graphs, newNodes
@@ -111,12 +165,12 @@ def min_inf_step(G, new):
     for i in G.nodes:
         if i not in new:
             pred = list(G.predecessors(i))
-            min_weight = 3
+            min_weight = 4
             for j in pred:
                 if j in step_list:
                     return G
                 set_edge_weight(G,j,i)
-                if G[j][i]["weight"] < min_weight:
+                if abs(G[j][i]["weight"]) < abs(min_weight):
                     min_weight = G[j][i]["weight"]
             G.nodes[i]["inf"] = min_weight
             new.append(i)
@@ -126,7 +180,7 @@ def min_inf_step(G, new):
 def med_inf(G):
     graphs = [G]
     newNodes = [0]
-    while len(newNodes) != 16:
+    while len(newNodes) != len(list(G.nodes)):
         nxt = med_inf_step(copy.deepcopy(graphs[-1]), newNodes)
         graphs.append(nxt)
     return graphs, newNodes

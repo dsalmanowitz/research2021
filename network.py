@@ -17,11 +17,11 @@ def get_graph(n=5, p=0.5):
         G.edges[start, end]["weight"] = r()
     return G
 
-def show(G):
-    if type(G) != list:
-        G = [G]
+def show(G, r = False):
+    if type(G) != list: G = [G]
+    if r: G.reverse()
     for j in range(len(G)):
-        plot = plt.figure(j+1)
+        plot = plt.figure(len(G)-j if r else j+1)
         colors = []
         for i in G[j].nodes:
             inf = G[j].nodes[i]["inf"]
@@ -60,7 +60,6 @@ def cascade(G, active):
 # Linear Threshold
 
 def lin_thresh_step(G):
-    new = []
     for i in G.nodes:
         pred = list(G.predecessors(i))
         s = 0
@@ -71,23 +70,31 @@ def lin_thresh_step(G):
                 p += 1
         s /= p if p != 0 else 1
         if abs(s) > G.nodes[i]["thresh"]:
-            G.nodes[i]["inf"] += s
-            G.nodes[i]["inf"] /= 2
-            new.append(i)
-    return G, new
+            G.nodes[i]["inf"] += 5*s
+            G.nodes[i]["inf"] /= 6
+    return G, total_inf(G)
 
 def lin_thresh(G):
     graphs = [G]
-    newNodes = [[0, 1]]
+    infs = [total_inf(G)]
     while True:
-        nxt, new = lin_thresh_step(copy.deepcopy(graphs[-1]))
-        if new == [] or new in newNodes:
+        nxt, inf = lin_thresh_step(copy.deepcopy(graphs[-1]))
+        if abs(inf - infs[-1]) < 0.0001 or inf in infs:
             break
         graphs.append(nxt)
-        newNodes.append(new)
-    return graphs, newNodes
+        infs.append(inf)
+    return graphs, infs
 
 # Metrics
+
+def num_inf(G):
+    n = 0
+    p = 0
+    for i in G.nodes:
+        inf = G.nodes[i]["inf"]
+        if inf < 0: n += 1
+        elif inf > 0: p += 1
+    return [n,p]
 
 def total_inf(G):
     s = 0
@@ -108,5 +115,20 @@ def most_suc(G):
             most_suc = n
     return most, most_suc
 
-gs, ns = lin_thresh(get_graph(n=20))
-print(total_inf(gs[-1]))
+def cd(G,n):
+    return G.degree(n) / (len(G.nodes) - 1)
+
+def most_cd(G):
+    high = 0
+    high_c = 0
+    for i in G.nodes:
+        c = cd(G,i)
+        if c > high_c:
+            high = i
+            high_c = c
+    return high, high_c 
+
+gs, infs = lin_thresh(get_graph(n=20,p=0.2))
+print("Summed influence: " + str(total_inf(gs[-1])))
+print(str(len(infs)) + " iterations")
+show(gs[-1])
