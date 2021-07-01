@@ -202,3 +202,52 @@ def med_inf_step(G, new):
             step_list.append(i)
     return G
 
+#disinf() and its helper functions work best with only positive values of inf
+
+def disinf(G):
+    graphs = [G]
+    newNodes = [15]
+    G.nodes[15]["inf"] = 0
+    while len(newNodes) != 16:
+        nxt = disinf_step(copy.deepcopy(graphs[-1]), newNodes)
+        graphs.append(nxt)
+    return graphs, newNodes
+
+def disinf_step(G, new):
+    step_list = []
+    node_list = list(G.nodes)
+    node_list.reverse()
+    for i in node_list:
+        if i not in new:
+            succ = list(G.successors(i))
+            weights = []
+            for j in succ:
+                if j in step_list:
+                    return G
+                weights.append(int(disinf_weight(G, i, j)))
+            if len(weights) != 0:
+                if len(weights) % 2 == 0:
+                    G.nodes[i]["inf"] = (weights[len(weights)//2]+weights[len(weights)//2-1])//2
+                else:
+                    G.nodes[i]["inf"] = weights[len(weights)//2]
+            new.append(i)
+            step_list.append(i)
+    return G
+
+def disinf_weight(G, i, j):
+    if G.nodes[j]["inf"] == G.nodes[i]["inf"]: return G.nodes[j]["inf"]
+    elif G.nodes[j]["inf"] > G.nodes[i]["inf"]: return G.nodes[i]["inf"]
+    else:
+        x = r()
+        if G.nodes[j]["inf"] + 1 == G.nodes[i]["inf"]:
+            if x < 0.5: return G.nodes[j]["inf"]
+            else: return G.nodes[i]["inf"]
+        elif G.nodes[j]["inf"] + 2 == G.nodes[i]["inf"]:
+            if x < 0.5: return G.nodes[i]["inf"]
+            elif x < 0.9: return G.nodes[j]["inf"]+1
+            else: return G.nodes[j]["inf"]
+        else:
+            if x < 0.75: return G.nodes[i]["inf"]
+            elif x < 0.9: return G.nodes[i]["inf"]-1
+            elif x < 0.975: return G.nodes[i]["inf"]-2
+            else: return G.nodes[j]["inf"]
