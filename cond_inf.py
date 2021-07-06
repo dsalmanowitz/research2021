@@ -45,7 +45,7 @@ def get_graph():
     ])
     return G
 
-def get_graph1(n=16, p=0.1):
+def get_graph1(n=16, p=0.3):
     G = nx.fast_gnp_random_graph(n, p, directed=True)
     for i in G.nodes:
         G.nodes[i]["inf"] = 0
@@ -78,10 +78,6 @@ def show1(G):
         colors = []
         for i in G[j].nodes:
             inf = G[j].nodes[i]["inf"]
-            #if inf == 3: colors.append("#008000")
-            #elif inf == 2: colors.append("#FFFF00")
-            #elif inf == 1: colors.append("#FFC0CB")
-            #else: colors.append("#FF0000")
             if inf == 3: colors.append("#4D8C57")
             elif inf == 2: colors.append("#78A161")
             elif inf == 1: colors.append("#A3B56B")
@@ -127,15 +123,17 @@ def set_edge_weight(G, i, j):
         elif 0.95 <= x < 0.99: G[i][j]["weight"] = 0
         else: G[i][j]["weight"] = 1
 
-def prob_inf(G, t):
+def prob_inf(G, t, max_iter=500):
     if t not in ["max", "min", "med"]:
         print("Invalid type")
         return
     graphs = [G]
-    newNodes = [0]
-    while len(newNodes) != len(list(G.nodes)):
+    newNodes = active_nodes(G)
+    for i in range(max_iter):
         nxt = prob_inf_step(copy.deepcopy(graphs[-1]), newNodes, t)
         graphs.append(nxt)
+        if len(newNodes) == len(G.nodes):
+            break
     return graphs
 
 def prob_inf_step(G, new, t):
@@ -143,15 +141,14 @@ def prob_inf_step(G, new, t):
     for i in G.nodes:
         if i not in new:
             pred = list(G.predecessors(i))
-            weight = 0 if t == "max" else 3
             for j in pred:
                 if j in step_list:
                     return G
                 set_edge_weight(G,j,i)
             pw = pred_weights(G, i, pred)
             abs_pw = list(map(abs, pw))
-            if len(pred) == 0:
-                G.nodes[i]["inf"] = 0
+            if sum(abs_pw) == 0:
+                continue
             else:
                 if t == "max":
                     G.nodes[i]["inf"] = pw[abs_pw.index(max(abs_pw))]
@@ -165,86 +162,19 @@ def prob_inf_step(G, new, t):
             step_list.append(i)
     return G
                     
-def pred_weights(G, i, pred):
+def pred_weights(G, i, pred, nonzero = True):
     ws = []
     for j in pred:
-        ws.append(G[j][i]["weight"])
+        w = G[j][i]["weight"]
+        if not nonzero or w != 0:
+            ws.append(w)
     return ws
 
-def max_inf(G):
-    graphs = [G]
-    newNodes = [0]
-    while len(newNodes) != len(list(G.nodes)):
-        nxt = max_inf_step(copy.deepcopy(graphs[-1]), newNodes)
-        graphs.append(nxt)
-    return graphs
-
-def max_inf_step(G, new):
-    step_list = []
+def active_nodes(G):
+    res = []
     for i in G.nodes:
-        if i not in new:
-            pred = list(G.predecessors(i))
-            max_weight = 0
-            for j in pred:
-                if j in step_list:
-                    return G
-                set_edge_weight(G,j,i)
-                if abs(G[j][i]["weight"]) > abs(max_weight):
-                    max_weight = G[j][i]["weight"]
-            G.nodes[i]["inf"] = max_weight
-            new.append(i)
-            step_list.append(i)
-    return G
-
-def min_inf(G):
-    graphs = [G]
-    newNodes = [0]
-    while len(newNodes) != len(list(G.nodes)):
-        nxt = min_inf_step(copy.deepcopy(graphs[-1]), newNodes)
-        graphs.append(nxt)
-    return graphs, newNodes
-
-def min_inf_step(G, new):
-    step_list = []
-    for i in G.nodes:
-        if i not in new:
-            pred = list(G.predecessors(i))
-            min_weight = 4
-            for j in pred:
-                if j in step_list:
-                    return G
-                set_edge_weight(G,j,i)
-                if abs(G[j][i]["weight"]) < abs(min_weight):
-                    min_weight = G[j][i]["weight"]
-            G.nodes[i]["inf"] = min_weight
-            new.append(i)
-            step_list.append(i)
-    return G
-
-def med_inf(G):
-    graphs = [G]
-    newNodes = [0]
-    while len(newNodes) != len(list(G.nodes)):
-        nxt = med_inf_step(copy.deepcopy(graphs[-1]), newNodes)
-        graphs.append(nxt)
-    return graphs, newNodes
-
-def med_inf_step(G, new):
-    step_list = []
-    for i in G.nodes:
-        if i not in new:
-            pred = list(G.predecessors(i))
-            for j in pred:
-                if j in step_list:
-                    return G
-                set_edge_weight(G,j,i)
-            if len(pred) % 2 == 0:
-                G.nodes[i]["inf"] = (G[pred[len(pred)//2]][i]["weight"]+G[pred[len(pred)//2-1]][i]["weight"])//2
-            else:
-                G.nodes[i]["inf"] = G[pred[len(pred)//2]][i]["weight"]
-            new.append(i)
-            step_list.append(i)
-    return G
+        if G.nodes[i]["inf"] != 0: res.append(i)
+    return res
 
 #disinf() and its helper functions work best with only positive values of inf
 
