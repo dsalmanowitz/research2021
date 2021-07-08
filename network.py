@@ -115,6 +115,7 @@ def most_suc(G):
             most_suc = n
     return most, most_suc
 
+#Degree Centrality
 def cd(G,n):
     return G.degree(n) / (len(G.nodes) - 1)
 
@@ -126,9 +127,28 @@ def most_cd(G):
         if c > high_c:
             high = i
             high_c = c
-    return high, high_c 
+    return high, high_c
 
-gs, infs = lin_thresh(get_graph(n=20,p=0.2))
-print("Summed influence: " + str(total_inf(gs[-1])))
-print(str(len(infs)) + " iterations")
-show(gs[-1])
+#Closeness Centrality
+def cc(G,n):
+    total = 0
+    for i in G.nodes:
+        if nx.has_path(G, n, i):
+            total += nx.shortest_path_length(G, n, i)
+    return round(1 / total, 2) if total != 0 else 0
+
+def most_cc(G):
+    high = 0
+    high_c = 0
+    for i in G.nodes:
+        c = cc(G,i)
+        if c > high_c:
+            high = i
+            high_c = c
+    return high, high_c   
+
+#gs, infs = lin_thresh(get_graph(n=20,p=0.2))
+#print("Summed influence: " + str(total_inf(gs[-1])))
+#print(str(len(infs)) + " iterations")
+#show(gs[-1])
+
