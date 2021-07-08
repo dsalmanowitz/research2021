@@ -155,9 +155,9 @@ def prob_inf_step(G, new, t):
                 elif t == "min":
                     G.nodes[i]["inf"] = pw[abs_pw.index(min(abs_pw))]
                 elif len(pred) % 2 == 0:
-                    G.nodes[i]["inf"] = (G[pred[len(pred)//2]][i]["weight"]+G[pred[len(pred)//2-1]][i]["weight"])//2
+                    G.nodes[i]["inf"] = (pw[len(pw)//2]+pw[len(pw)//2-1])//2
                 else:
-                    G.nodes[i]["inf"] = G[pred[len(pred)//2]][i]["weight"]
+                    G.nodes[i]["inf"] = pw[len(pw)//2]
             new.append(i)
             step_list.append(i)
     return G
@@ -176,18 +176,23 @@ def active_nodes(G):
         if G.nodes[i]["inf"] != 0: res.append(i)
     return res
 
-#disinf() and its helper functions work best with only positive values of inf
+#disinf() and its helper functions do not work for random graphs yet
 
-def disinf(G):
+def disinf(G, t, inf, max_iter=500):
+    if t not in ["max", "min", "med"]:
+       print("Invalid type")
+       return
     graphs = [G]
     newNodes = [15]
-    G.nodes[15]["inf"] = 0
-    while len(newNodes) != 16:
-        nxt = disinf_step(copy.deepcopy(graphs[-1]), newNodes)
+    G.nodes[15]["inf"] = inf
+    for i in range(max_iter):
+        nxt = disinf_step(copy.deepcopy(graphs[-1]), newNodes, t)
         graphs.append(nxt)
+        if len(newNodes) == len(G.nodes):
+            break
     return graphs, newNodes
 
-def disinf_step(G, new):
+def disinf_step(G, new, t):
     step_list = []
     node_list = list(G.nodes)
     node_list.reverse()
@@ -198,9 +203,14 @@ def disinf_step(G, new):
             for j in succ:
                 if j in step_list:
                     return G
-                weights.append(int(disinf_weight(G, i, j)))
+                weights.append(disinf_weight(G, i, j))
+            abs_weights = list(map(abs, weights))    
             if len(weights) != 0:
-                if len(weights) % 2 == 0:
+                if t == "max":
+                    G.nodes[i]["inf"] = weights[abs_weights.index(max(abs_weights))]
+                elif t == "min":
+                    G.nodes[i]["inf"] = weights[abs_weights.index(min(abs_weights))]
+                elif len(weights) % 2 == 0:
                     G.nodes[i]["inf"] = (weights[len(weights)//2]+weights[len(weights)//2-1])//2
                 else:
                     G.nodes[i]["inf"] = weights[len(weights)//2]
@@ -209,19 +219,19 @@ def disinf_step(G, new):
     return G
 
 def disinf_weight(G, i, j):
+    x = r()
     if G.nodes[j]["inf"] == G.nodes[i]["inf"]: return G.nodes[j]["inf"]
-    elif G.nodes[j]["inf"] > G.nodes[i]["inf"]: return G.nodes[i]["inf"]
+    elif G.nodes[j]["inf"] + 1 == G.nodes[i]["inf"]:
+        if x < 0.5: return G.nodes[i]["inf"]
+        else: return G.nodes[j]["inf"]
+    elif G.nodes[j]["inf"] + 2 == G.nodes[i]["inf"]:
+        if x < 0.5: return G.nodes[i]["inf"]
+        elif x < 0.8: return G.nodes[i]["inf"]-1
+        else: return G.nodes[j]["inf"]
+    elif G.nodes[j]["inf"] + 3 == G.nodes[i]["inf"]:
+        if x < 0.5: return G.nodes[i]["inf"]
+        elif x < 0.8: return G.nodes[i]["inf"]-1
+        elif x < 0.95: return G.nodes[i]["inf"]-2
+        else: return G.nodes[j]["inf"]
     else:
-        x = r()
-        if G.nodes[j]["inf"] + 1 == G.nodes[i]["inf"]:
-            if x < 0.5: return G.nodes[j]["inf"]
-            else: return G.nodes[i]["inf"]
-        elif G.nodes[j]["inf"] + 2 == G.nodes[i]["inf"]:
-            if x < 0.5: return G.nodes[i]["inf"]
-            elif x < 0.9: return G.nodes[j]["inf"]+1
-            else: return G.nodes[j]["inf"]
-        else:
-            if x < 0.75: return G.nodes[i]["inf"]
-            elif x < 0.9: return G.nodes[i]["inf"]-1
-            elif x < 0.975: return G.nodes[i]["inf"]-2
-            else: return G.nodes[j]["inf"]
+        return G.nodes[i]["inf"]
