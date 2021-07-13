@@ -105,47 +105,40 @@ def total_inf(G):
 def avg_inf(G):
     return total_inf(G) / len(list(G.nodes))
 
-def most_suc(G):
-    most = 0
-    most_suc = 0
+def highest_metric(G, f):
+    high = 0
+    high_val = 0
     for i in G.nodes:
-        n = len(list(G.successors(i)))
-        if n > most_suc:
-            most = i
-            most_suc = n
-    return most, most_suc
+        n = f(G,i)
+        if n > high_val:
+            high = i
+            high_val = n
+    return high, high_val
+
+#Outdegree
+def out(G,i):
+    return len(list(G.successors(i)))
+
+def most_out(G):
+    return highest_metric(G, out)
 
 #Degree Centrality
-def cd(G,n):
-    return G.degree(n) / (len(G.nodes) - 1)
+def cd(G,i):
+    return G.degree(i) / (len(G.nodes) - 1)
 
 def most_cd(G):
-    high = 0
-    high_c = 0
-    for i in G.nodes:
-        c = cd(G,i)
-        if c > high_c:
-            high = i
-            high_c = c
-    return high, high_c
+    return highest_metric(G, cd)
 
 #Closeness Centrality
-def cc(G,n):
+def cc(G,i):
     total = 0
-    for i in G.nodes:
-        if nx.has_path(G, n, i):
-            total += nx.shortest_path_length(G, n, i)
+    for j in G.nodes:
+        if nx.has_path(G, i, j):
+            total += nx.shortest_path_length(G, i, j)
     return round(1 / total, 2) if total != 0 else 0
 
 def most_cc(G):
-    high = 0
-    high_c = 0
-    for i in G.nodes:
-        c = cc(G,i)
-        if c > high_c:
-            high = i
-            high_c = c
-    return high, high_c   
+    return highest_metric(G, cc)
 
 #gs, infs = lin_thresh(get_graph(n=20,p=0.2))
 #print("Summed influence: " + str(total_inf(gs[-1])))

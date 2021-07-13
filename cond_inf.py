@@ -123,6 +123,13 @@ def set_edge_weight(G, i, j):
         elif 0.95 <= x < 0.99: G[i][j]["weight"] = 0
         else: G[i][j]["weight"] = 1
 
+def max_inf(G):
+    return prob_inf(G, "max")
+def min_inf(G):
+    return prob_inf(G, "min")
+def med_inf(G):
+    return prob_inf(G, "med")
+
 def prob_inf(G, t, max_iter=500):
     if t not in ["max", "min", "med"]:
         print("Invalid type")
