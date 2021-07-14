@@ -183,21 +183,32 @@ def active_nodes(G):
         if G.nodes[i]["inf"] != 0: res.append(i)
     return res
 
-#disinf() and its helper functions do not work for random graphs yet
-
-def disinf(G, t, inf, max_iter=500):
+def disinf(G, t, p, inf, max_iter=500):
     if t not in ["max", "min", "med"]:
        print("Invalid type")
        return
     graphs = [G]
-    newNodes = [15]
-    G.nodes[15]["inf"] = inf
+    newNodes = disinf_start_nodes(G, p)
+    for i in newNodes:
+        G.nodes[i]["inf"] = inf
     for i in range(max_iter):
         nxt = disinf_step(copy.deepcopy(graphs[-1]), newNodes, t)
         graphs.append(nxt)
         if len(newNodes) == len(G.nodes):
             break
     return graphs, newNodes
+
+def disinf_start_nodes(G, p):
+    eligible_nodes = list(filter(lambda i: G.out_degree(i) != 0, G.nodes))
+    max_size = len(eligible_nodes)*p//1
+    count = 0
+    chosen_nodes = []
+    while count < max_size:
+        potential_node = r()*len(eligible_nodes)//1
+        if potential_node not in chosen_nodes:
+            chosen_nodes.append(potential_node)
+            count+=1
+    return chosen_nodes
 
 def disinf_step(G, new, t):
     step_list = []
