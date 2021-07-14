@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import networkx as nx
 import random
 import copy
+import numpy as np
 
 def r():
     return random.random()
@@ -253,3 +254,69 @@ def disinf_weight(G, i, j):
         else: return G.nodes[j]["inf"]
     else:
         return G.nodes[i]["inf"]
+
+def average_inf(graphs):
+    node_res = [0 for i in len(graphs[0].nodes)]
+    for G in graphs:
+        for n in G.nodes:
+            node_res[n] += G.nodes[n]["inf"]
+    node_res = np.array(node_sums)/len(graphs)
+    avg_graph = copy.deepcopy(graphs[0])
+    for n in avg_graph.nodes:
+        avg_graph.nodes[n]["inf"] = round(node_res[n])
+    return avg_graph
+
+#Metric
+
+def num_inf(G):
+    n = 0
+    p = 0
+    for i in G.nodes:
+        inf = G.nodes[i]["inf"]
+        if inf < 0: n += 1
+        elif inf > 0: p += 1
+    return [n,p]
+
+def total_inf(G):
+    s = 0
+    for i in G.nodes:
+        s += G.nodes[i]["inf"]
+    return s
+
+def avg_inf(G):
+    return total_inf(G) / len(list(G.nodes))
+
+def highest_metric(G, f):
+    high = 0
+    high_val = 0
+    for i in G.nodes:
+        n = f(G,i)
+        if n > high_val:
+            high = i
+            high_val = n
+    return high, high_val
+
+#Outdegree
+def out(G,i):
+    return len(list(G.successors(i)))
+
+def most_out(G):
+    return highest_metric(G, out)
+
+#Degree Centrality
+def cd(G,i):
+    return G.degree(i) / (len(G.nodes) - 1)
+
+def most_cd(G):
+    return highest_metric(G, cd)
+
+#Closeness Centrality
+def cc(G,i):
+    total = 0
+    for j in G.nodes:
+        if nx.has_path(G, i, j):
+            total += nx.shortest_path_length(G, i, j)
+    return round(1 / total, 2) if total != 0 else 0
+
+def most_cc(G):
+    return highest_metric(G, cc)
