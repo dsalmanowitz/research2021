@@ -256,11 +256,11 @@ def disinf_weight(G, i, j):
         return G.nodes[i]["inf"]
 
 def average_inf(graphs):
-    node_res = [0 for i in len(graphs[0].nodes)]
+    node_res = [0 for i in graphs[0].nodes]
     for G in graphs:
         for n in G.nodes:
             node_res[n] += G.nodes[n]["inf"]
-    node_res = np.array(node_sums)/len(graphs)
+    node_res = np.array(node_res)/len(graphs)
     avg_graph = copy.deepcopy(graphs[0])
     for n in avg_graph.nodes:
         avg_graph.nodes[n]["inf"] = round(node_res[n])
