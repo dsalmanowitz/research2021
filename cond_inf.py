@@ -3,6 +3,7 @@ import networkx as nx
 import random
 import copy
 import numpy as np
+import pandas as pd
 
 def r():
     return random.random()
@@ -56,6 +57,15 @@ def get_graph1(n=16, p=0.3):
         G.edges[start, end]["weight"] = 0
     return G
 
+def create_london(area=0):
+    if area < 0 or area > 8:
+        print("Invalid area of Greater London")
+        return
+    xls = pd.ExcelFile("GreaterLondon_Power_Network.xlsx")
+    gl0 = pd.read_excel(xls, "Greater London " + str(area), header=None).drop(axis=0, index=0)
+    edges = gl0[[0,1]].values.tolist()
+    return nx.from_edgelist(edges)
+
 def show(G):
     if type(G) != list:
         G = [G]
@@ -80,10 +90,10 @@ def show1(G):
         for i in G[j].nodes:
             inf = G[j].nodes[i]["inf"]
             if inf == 3: colors.append("#4D8C57")
-            elif inf == 2: colors.append("#78A161")
-            elif inf == 1: colors.append("#A3B56B")
+            elif inf == 2: colors.append("#04FDFD")
+            elif inf == 1: colors.append("#0429FD")
             elif inf == 0: colors.append("#FFFF00")
-            elif inf == -1: colors.append("#FD9A01")
+            elif inf == -1: colors.append("#FD04F9")
             elif inf == -2: colors.append("#FD6104")
             else: colors.append("#F00505")
         nx.draw(G[j], with_labels=True, node_color=colors)
@@ -266,7 +276,7 @@ def average_inf(graphs):
         avg_graph.nodes[n]["inf"] = round(node_res[n])
     return avg_graph
 
-#Metric
+#Metrics
 
 def num_inf(G):
     n = 0
@@ -283,7 +293,7 @@ def total_inf(G):
         s += G.nodes[i]["inf"]
     return s
 
-def avg_inf(G):
+def mean_g_inf(G):
     return total_inf(G) / len(list(G.nodes))
 
 def highest_metric(G, f):
