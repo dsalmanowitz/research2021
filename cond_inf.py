@@ -57,13 +57,15 @@ def get_graph1(n=16, p=0.3):
         G.edges[start, end]["weight"] = 0
     return G
 
-def create_london(area=0):
+def create_london(area=0, n=0):
     if area < 0 or area > 8:
         print("Invalid area of Greater London")
         return
     xls = pd.ExcelFile("GreaterLondon_Power_Network.xlsx")
-    gl0 = pd.read_excel(xls, "Greater London " + str(area), header=None).drop(axis=0, index=0)
-    edges = gl0[[0,1]].values.tolist()
+    labels = ["From", "To", "Buildings", "Type", "Length"]
+    gl = pd.read_excel(xls, "Greater London " + str(area), names=labels)
+    subset = gl.drop(axis=0, index=0) if n < 1 else gl[(gl.From < n) & (gl.To < n)]
+    edges = subset[["From","To"]].values.tolist()
     return nx.from_edgelist(edges)
 
 def show(G):
@@ -278,14 +280,13 @@ def average_inf(graphs):
 
 #Metrics
 
+#Positive Only
 def num_inf(G):
-    n = 0
-    p = 0
+    res = [0 for i in range(4)]
     for i in G.nodes:
         inf = G.nodes[i]["inf"]
-        if inf < 0: n += 1
-        elif inf > 0: p += 1
-    return [n,p]
+        if inf >= 0: res[inf] += 1
+    return res
 
 def total_inf(G):
     s = 0
