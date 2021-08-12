@@ -331,3 +331,87 @@ def cc(G,i):
 
 def most_cc(G):
     return highest_metric(G, cc)
+
+def energy_test_run():
+    c = create_london(0, 50)
+    c.add_edges_from([(0,9), (0, 37), (0, 43), (0, 36), (0, 44), (0, 26), (0, 5), (0, 40)]) #to connect all nodes
+    for i in c.nodes:
+        c.nodes[i]["inf"] = 0
+    c.nodes[0]["inf"] = 3
+    for (start, end) in c.edges:
+        c.edges[start, end]["weight"] = 0
+    c = max_inf(c)[-1]
+    #show(c)
+    o = energy_usage(c)
+    print(o)
+    if o > 0.2*len(c.nodes):
+        print("SHUTDOWN OVERLOAD")
+
+def energy_usage(G):
+    P_rated = 3.3   #value in kW
+    E_rated = 7        #value in kWH
+    Bat_Efficiency = .85 
+    E_bat = .5 * E_rated #initial amount of energy stored in battery on 1st day
+    delta_t = 1/15
+    
+    P_bat = 0
+    P_bat_list = []       #empty list for graphing energy values later
+   
+    Tx_power = pd.read_csv("Single Day October 31.csv")    
+    H = Tx_power["dataid"]                  #unique id for household data
+    d = Tx_power["day number"]              #what day of the year
+    m = Tx_power["time quarter number"]     #what minute of the day 
+    
+    overload = 0
+
+    for i in G.nodes:
+        P_bat = 0
+        for j in Tx_power["time quarter number"]:
+            P_use = Tx_power["grid1"]         #energy used calculated in excel as sum of all eguage values except grid and solar
+            P_gen = Tx_power["solar1"]
+            P_target = P_use[t]-P_gen[t]
+
+            if G.nodes[i]["inf"] == 1:
+                P_target = P_target + 0.5
+            
+            elif G.nodes[i]["inf"] == 2:
+                P_target = P_target + 1
+
+            elif G.nodes[i]["inf"] == 3:
+                P_target = P_target + 1.5
+            
+            if P_target > 0 and E_bat >= 0:
+               P_bat = P_target
+               
+            elif P_target < 0 and E_bat <= E_rated:
+                P_bat = max(P_target, -P_rated)
+                
+            else: 
+                P_bat = 0
+                
+            if P_bat > 0:
+                k = 1/math.sqrt(Bat_Efficiency)     #discharging
+            else : 
+                k = math.sqrt(Bat_Efficiency)       #charging
+                
+            E_bat = E_bat - P_bat * k * delta_t
+
+            if P_bat > P_rated:
+                overload = overload + 1
+                break
+                
+        #Tx_power["Battery Power"] = P_bat_list    #add battery power list to dataframe
+        #print(Tx_power.head())
+        #Tx_power["date"] = Tx_power["date"].astype(str)
+
+
+        #plt.plot("time", "Battery Power", data=Tx_power, color = 'green', marker = '')
+        #plt.plot("time", "solar1", data=Tx_power, color = 'blue', marker = '')
+        #plt.plot("time", "grid1", data=Tx_power, color = 'red', marker = '')
+        #plt.title('Battery Power over time', fontsize = 14)
+        #plt.xlabel("time", fontsize = 14)
+        #plt.ylabel("Power (kW)", fontsize = 14)
+        #plt.legend()
+        #plt.show()
+
+    return overload
