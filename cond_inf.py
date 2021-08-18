@@ -369,16 +369,7 @@ def energy_usage(G):
         for j in Tx_power["time quarter number"]:
             P_use = Tx_power["grid1"]         #energy used calculated in excel as sum of all eguage values except grid and solar
             P_gen = Tx_power["solar1"]
-            P_target = P_use[t]-P_gen[t]
-
-            if G.nodes[i]["inf"] == 1:
-                P_target = P_target + 0.5
-            
-            elif G.nodes[i]["inf"] == 2:
-                P_target = P_target + 1
-
-            elif G.nodes[i]["inf"] == 3:
-                P_target = P_target + 1.5
+            P_target = P_use[t]-P_gen[t] + 0.5*G.nodes[i]["inf"]
             
             if P_target > 0 and E_bat >= 0:
                P_bat = P_target
